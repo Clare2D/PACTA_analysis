@@ -21,7 +21,7 @@ set_report_parameters <- function(ParameterFilePath){
   start_year <<- as.numeric(Startyear)
   no_companies <<- as.numeric(No.Companies)
   
-  if(!exists(inc_sda_approach)){
+  if(!exists("inc_sda_approach")){
     inc_sda_approach <- FALSE
     print("inc_sda_approach not in parameter file. Default value set to FALSE.")
   }
@@ -56,7 +56,7 @@ ReportData <- function(){
   
   SizePortfolio <-  subgroup_overview %>%
     filter(portfolio_name == portfolio_name_select) %>%
-    distinct(Port.ValueUSD)
+    distinct(asset_value_usd)
   SizeofPortfolio<- SizePortfolio[[1]]
   
   
@@ -104,7 +104,7 @@ ReportData <- function(){
   
   BenchmarkValue <- "market"
   
-  if(HasSB){
+  if(has_sb){
     SovBondCov <- SB.Values$SBPerc[SB.Values$investor_name == investor_name_select & SB.Values$portfolio_name == portfolio_name_select]
     SovBondCov <- ifelse(identical(SovBondCov, numeric(0)),0,SovBondCov)  
     SovBondCov <<- round(SovBondCov*100,1)
@@ -123,6 +123,7 @@ ReportData <- function(){
   }
   
   SectorCheck <- test_list#[test_list$portfolio_name == portfolio_name_select,]
+  
   
   if (data_check(SectorCheck)){
     HasPower <<- SectorCheck$Power.CB| SectorCheck$Power.EQ
@@ -143,19 +144,19 @@ ReportData <- function(){
   
   ProjectPeersRef = PeerGroupSelection
   
-  PeerGroupName <- ifelse(eq_peers_ref == cb_peers_ref & eq_peers_ref == "Project",ProjectPeersRef, PeerGroupName)
+  PeerGroupName <- ifelse(EQPeersRef == CBPeersRef & EQPeersRef == "Project",ProjectPeersRef, PeerGroupName)
   
   
   # Check Physical Risk
   
-  if(data_check(EQPhysicalRisk)){
-    EQPhysicalRiskCheck <- TRUE
-  }else{EQPhysicalRiskCheck <- FALSE}
-  
-  if(data_check(CBPhysicalRisk)){
-    CBPhysicalRiskCheck <-TRUE
-  }  else{CBPhysicalRiskCheck <- FALSE}
-  
+  # if(data_check(EQPhysicalRisk)){
+  #   EQPhysicalRiskCheck <- TRUE
+  # }else{EQPhysicalRiskCheck <- FALSE}
+  # 
+  # if(data_check(CBPhysicalRisk)){
+  #   CBPhysicalRiskCheck <-TRUE
+  # }  else{CBPhysicalRiskCheck <- FALSE}
+  # 
   # if (IsSample == T){     # Only necessary to print an unnamed report ie for sharing with interested partners. 
   #   investor_name_select <- "Investor"
   #   portfolio_name_select <- "Sample Portfolio"
@@ -210,7 +211,7 @@ ReportGeneration <- function(){
   
   over <- SectorDataAnalysis()
   
-  AnalysisCoverage <-  round(sum(over$valid_value_usd[over$financial_sector !="Not Included"])/sum(over$valid_value_usd)*100,1)
+  AnalysisCoverage <<-  round(sum(over$valid_value_usd[over$financial_sector !="Not Included"])/sum(over$valid_value_usd)*100,1)
   
   
   reportdata <- ReportData()
@@ -261,6 +262,7 @@ ReportGeneration <- function(){
       text <- removetextlines("AutoSector_EQ")
     }
   }
+  
   if(!HasPower){
     text <- removetextlines("PowerSector_ALL")
   } else {
@@ -358,7 +360,7 @@ ReportGeneration <- function(){
     portfolio_name_select <- "Sample Portfolio"
   }
   
-  reportdata$AssetClass <- BondReferenceLong
+  reportdata$AssetClass <- BondReference
   reportdata$ReportDate <- if(financial_timestamp == "2017Q4"){"31.12.2017"}else 
     if(financial_timestamp == "2018Q4"){"31.12.2018"}else 
       if(financial_timestamp == "2019Q4"){"31.12.2019"}else{
@@ -397,7 +399,7 @@ ReportGeneration <- function(){
   text$text <- gsub("CBMarketRef",cb_market_ref, text$text)
   
   
-  if (HasSB){
+  if (has_sb){
     text$text <- gsub("SovBondCov",SovBondCov, text$text)
     text$text <- gsub("sbdowngradeperc",sb_downgrade_perc, text$text)
   }
@@ -416,7 +418,7 @@ ReportGeneration <- function(){
     namestring <- gsub("00_","",namestring)
     FigNames <- as.data.frame(list.files(paste0(report_path), pattern = paste0(namestring)))
     colnames(FigNames) <- "Name"
-    FigNames$Fig <- substring(FigNames$Name,1,2)
+    FigNames$Fig <- paste0("Fig",substring(FigNames$Name,1,2))
     
     FigureLocation <- "ReportOutputs"
     
@@ -430,7 +432,7 @@ ReportGeneration <- function(){
     
     ReportName <- paste0("ClimateAlignmentReport_",strtrim(investor_name_select,20),"_",strtrim(portfolio_name_select,20))
     
-    if (InvestorType %in% c("InvestorSingle","InvestorMeta")){ReportName <- paste0("ClimateAlignmentReport_",investor_name_select)}
+    # if (InvestorType %in% c("InvestorSingle","InvestorMeta")){ReportName <- paste0("ClimateAlignmentReport_",investor_name_select)}
     
     ReportName <- gsub(" ","",ReportName)
     
@@ -445,7 +447,7 @@ ReportGeneration <- function(){
     write.table(text,paste0(report_path,ReportName,".Rnw"),col.names = FALSE,row.names = FALSE,quote=FALSE,fileEncoding = "UTF-8")  
     
     # Copy in Report Graphics
-    originalloc <- paste0(dirname(Location),"/Templates/ReportGraphics/")  
+    originalloc <- paste0(working_location,"/Templates/ReportGraphics/")  
     graphicsloc <- paste0(report_path,"ReportGraphics/")
     flist <- list.files(originalloc, full.names = TRUE)
     

@@ -24,6 +24,12 @@ library(ggforce)
 library(sitools) 
 library(countrycode)
 
+if (rstudioapi::isAvailable()) {
+  working_location <- dirname(rstudioapi::getActiveDocumentContext()$path)
+} else {
+  working_location <- getwd()
+}
+
 # Set Reporting Parameters
 options(r2dii_config = paste0(par_file_path,"/ReportParameters.yml"))
 
@@ -39,7 +45,7 @@ portfolio_overview$portfolio_name <- clean_punctuation(portfolio_overview$portfo
 report_list <- get_report_list(portfolio_overview)
 
 
-# template <- readLines(paste0(dirname("/Templates/",templateversion,".tex"),encoding = "UTF-8"))
+template <- readLines(paste0(getwd(),"/Templates/",templateversion,".tex"),encoding = "UTF-8")
 translate_labels(Language)
 
 if(has_sb){SB.Values = GetSovBondCoverage()}
